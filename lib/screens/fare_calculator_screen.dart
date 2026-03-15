@@ -6,22 +6,54 @@ class FareCalculatorScreen extends StatefulWidget {
 }
 
 class _FareCalculatorScreenState extends State<FareCalculatorScreen> {
-  String _transportationMethod = 'Bus';
-  double _distance = 0.0;
+  String? selectedTransport;
+  String? selectedDistance;
+  int fare = 0;
+  int time = 0;
 
-  final Map<String, double> _fareRates = {
-    'Bus': 1.5,
-    'Train': 2.0,
-    'Taxi': 2.5,
+  final Map<String, Map<String, dynamic>> transportData = {
+    'バス': {
+      'baseFare': 100,
+      'perKm': 50,
+      'speed': 30,
+    },
+    '電車': {
+      'baseFare': 150,
+      'perKm': 40,
+      'speed': 60,
+    },
+    'タクシー': {
+      'baseFare': 600,
+      'perKm': 80,
+      'speed': 40,
+    },
+    '自転車': {
+      'baseFare': 0,
+      'perKm': 0,
+      'speed': 15,
+    },
   };
 
-  double _calculatedFare = 0.0;
-  String _travelTime = '';
+  final List<String> distances = ['1km', '5km', '10km', '20km', '50km'];
 
-  void _calculateFare() {
+  void calculateFare() {
+    if (selectedTransport == null || selectedDistance == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('交通手段と距離を選択してください')),
+      );
+      return;
+    }
+
+    int km = int.parse(selectedDistance!.replaceAll('km', ''));
+    var data = transportData[selectedTransport]!;
+
     setState(() {
-      _calculatedFare = _fareRates[_transportationMethod]! * _distance;
-      _travelTime = (_distance / 30).toStringAsFixed(2) + ' hours'; // Assuming an average speed of 30 km/h
+      if (selectedTransport == '自転車') {
+        fare = 0;
+      } else {
+        fare = (data['baseFare'] + (km * data['perKm'])).toInt();
+      }
+      time = ((km / data['speed']) * 60).toInt();
     });
   }
 
@@ -29,40 +61,82 @@ class _FareCalculatorScreenState extends State<FareCalculatorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Fare Calculator'),
+        title: Text('料金計算機'),
+        backgroundColor: Colors.green,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+        padding: EdgeInsets.all(16),
+        child: ListView(
           children: [
+            SizedBox(height: 20),
+            Text('交通手段を選択', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
             DropdownButton<String>(
-              value: _transportationMethod,
+              isExpanded: true,
+              hint: Text('交通手段を選択'),
+              value: selectedTransport,
               onChanged: (String? newValue) {
                 setState(() {
-                  _transportationMethod = newValue!;
+                  selectedTransport = newValue;
                 });
               },
-              items: _fareRates.keys.map<DropdownMenuItem<String>>((String value) {
+              items: transportData.keys.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value),
                 );
               }).toList(),
             ),
-            TextField(
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: 'Distance (km)'),
-              onChanged: (value) {
-                _distance = double.tryParse(value) ?? 0.0;
+            SizedBox(height: 30),
+            Text('距離を選択', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
+            DropdownButton<String>(
+              isExpanded: true,
+              hint: Text('距離を選択'),
+              value: selectedDistance,
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedDistance = newValue;
+                });
               },
+              items: distances.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
+            SizedBox(height: 30),
             ElevatedButton(
-              onPressed: _calculateFare,
-              child: Text('Calculate'),
+              onPressed: calculateFare,
+              child: Text('料金を計算', style: TextStyle(fontSize: 18)),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 15),
+                backgroundColor: Colors.green,
+              ),
             ),
-            SizedBox(height: 20),
-            Text('Calculated Fare: \\$${_calculatedFare.toStringAsFixed(2)}'),
-            Text('Estimated Travel Time: $_travelTime'),
+            SizedBox(height: 40),
+            if (fare > 0 || selectedTransport == '自転車' && selectedDistance != null)
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '料金: ¥$fare',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
+                    ),
+                    SizedBox(height: 15),
+                    Text(
+                      '所要時間: ${time}分',
+                      style: TextStyle(fontSize: 20, color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
