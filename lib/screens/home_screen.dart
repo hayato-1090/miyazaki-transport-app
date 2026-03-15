@@ -1,19 +1,81 @@
 import 'package:flutter/material.dart';
+import 'detail_screen.dart';
 
 class HomeScreen extends StatelessWidget {
+  final Map<String, String> transportDetails = {
+    'バス': '宮崎市内を走る主要なバス路線\n・運行本数：1時間に複数本\n・料金：100円～300円\n・営業時間：5:00～23:00',
+    '電車': '宮崎交通線で運行\n・駅数：20駅以上\n・料金：150円～500円\n・営業時間：6:00～22:00',
+    'タクシー': '宮崎市内のタクシー\n・初乗り：600円\n・24時間営業\n・予約可能',
+    '自転車': 'レンタル自転車サービス\n・1日利用：500円\n・ステーション：市内20箇所以上\n・営業時間：7:00～20:00',
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('宮崎の交通手段'), // Miyazaki Transportation Options
+        title: Text('宮崎の交通手段'),
+        backgroundColor: Colors.blue,
       ),
       body: GridView.count(
         crossAxisCount: 2,
+        padding: EdgeInsets.all(8),
         children: <Widget>[
-          TransportCard(label: 'バス', icon: Icons.directions_bus), // Bus
-          TransportCard(label: '電車', icon: Icons.directions_railway), // Train
-          TransportCard(label: 'タクシー', icon: Icons.local_taxi), // Taxi
-          TransportCard(label: '自転車', icon: Icons.pedal_bike), // Bicycle
+          TransportCard(
+            label: 'バス',
+            icon: Icons.directions_bus,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailScreen(
+                    transportDetails: transportDetails['バス']!,
+                  ),
+                ),
+              );
+            },
+          ),
+          TransportCard(
+            label: '電車',
+            icon: Icons.directions_railway,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailScreen(
+                    transportDetails: transportDetails['電車']!,
+                  ),
+                ),
+              );
+            },
+          ),
+          TransportCard(
+            label: 'タクシー',
+            icon: Icons.local_taxi,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailScreen(
+                    transportDetails: transportDetails['タクシー']!,
+                  ),
+                ),
+              );
+            },
+          ),
+          TransportCard(
+            label: '自転車',
+            icon: Icons.pedal_bike,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailScreen(
+                    transportDetails: transportDetails['自転車']!,
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -23,19 +85,28 @@ class HomeScreen extends StatelessWidget {
 class TransportCard extends StatelessWidget {
   final String label;
   final IconData icon;
+  final VoidCallback onTap;
 
-  TransportCard({required this.label, required this.icon});
+  TransportCard({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Icon(icon, size: 40),
-          SizedBox(height: 10),
-          Text(label, style: TextStyle(fontSize: 20)),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        elevation: 4,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(icon, size: 50, color: Colors.blue),
+            SizedBox(height: 10),
+            Text(label, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }
