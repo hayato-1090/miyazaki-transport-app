@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../services/directions_service.dart';
 import 'detail_screen.dart';
 import 'fare_calculator_screen.dart';
+import 'route_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -15,7 +16,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // API キーを .env から読み込む
     final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
     directionsService = DirectionsService(apiKey: apiKey);
   }
@@ -34,6 +34,17 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text('宮崎の交通手段'),
         backgroundColor: Colors.blue,
         actions: [
+          IconButton(
+            icon: Icon(Icons.route),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RouteScreen(directionsService: directionsService),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(Icons.calculate),
             onPressed: () {
