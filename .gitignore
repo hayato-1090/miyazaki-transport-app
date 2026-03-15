@@ -27,3 +27,18 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Android
+android/local.properties
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+
+# iOS
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/.symlinks/
+ios/Pods/
+ios/Runner.xcworkspace/
+
