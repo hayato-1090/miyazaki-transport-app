@@ -3,30 +3,17 @@ import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 
 class DirectionsService {
-  // API キーは .env から読み込む
   final String apiKey;
 
   DirectionsService({required this.apiKey});
 
-  /// 出発地から目的地までのルート情報を取得
-  /// [origin]: 出発地 (緯度,経度 または 住所)
-  /// [destination]: 目的地 (緯度,経度 または 住所)
-  /// [mode]: 移動手段 (driving, transit, walking, bicycling)
   Future<Map<String, dynamic>?> getDirections({
     required String origin,
     required String destination,
     String mode = 'driving',
   }) async {
     try {
-      final String url =
-          'https://maps.googleapis.com/maps/api/directions/json?'
-          'origin=
-$origin'
-          '&destination=$destination'
-          '&mode=$mode'
-          '&key=
-$apiKey'
-          '&language=ja';
+      final String url = 'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&mode=$mode&key=$apiKey&language=ja';
 
       developer.log('Directions API URL: $url');
 
@@ -57,7 +44,6 @@ $apiKey'
     }
   }
 
-  /// 複数の移動手段を比較
   Future<Map<String, dynamic>> compareTransportModes({
     required String origin,
     required String destination,
