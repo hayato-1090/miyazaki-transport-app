@@ -2,7 +2,7 @@ name: miyazaki_transport_app
 
 description: A new Flutter project.
 
-publishTo: 'none'  # Remove this line if you wish to publish to pub.dev
+publishTo: 'none'
 
 version: 1.0.0+1
 
@@ -13,6 +13,8 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^0.1.3
+  http: ^1.1.0
+  flutter_dotenv: ^5.1.0
 
 flutter:
   uses-material-design: true
