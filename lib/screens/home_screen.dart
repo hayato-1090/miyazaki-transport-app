@@ -4,6 +4,7 @@ import '../services/directions_service.dart';
 import 'detail_screen.dart';
 import 'fare_calculator_screen.dart';
 import 'route_screen.dart';
+import 'map_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -35,7 +36,18 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.blue,
         actions: [
           IconButton(
+            icon: Icon(Icons.map),
+            tooltip: '現在地マップ',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MapScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.route),
+            tooltip: 'ルート検索',
             onPressed: () {
               Navigator.push(
                 context,
@@ -47,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: Icon(Icons.calculate),
+            tooltip: '料金計算',
             onPressed: () {
               Navigator.push(
                 context,
