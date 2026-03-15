@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:developer' as developer;
 
 class DirectionsService {
   final String apiKey;
@@ -15,7 +14,7 @@ class DirectionsService {
     try {
       final String url = 'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&mode=$mode&key=$apiKey&language=ja';
 
-      developer.log('Directions API URL: $url');
+      print('[DirectionsService] Directions API URL: $url');
 
       final response = await http.get(Uri.parse(url));
 
@@ -23,6 +22,7 @@ class DirectionsService {
         final json = jsonDecode(response.body);
 
         if (json['status'] == 'OK' && json['routes'].isNotEmpty) {
+          print('[DirectionsService] Success: distance=${json['routes'][0]['legs'][0]['distance']['text']}');
           return {
             'status': 'OK',
             'routes': json['routes'],
@@ -31,15 +31,15 @@ class DirectionsService {
             'polyline': json['routes'][0]['overview_polyline']['points'],
           };
         } else {
-          developer.log('API Error: ${json['status']}');
+          print('[DirectionsService] API Error: ${json['status']} - ${json['error_message'] ?? 'No error message'}');
           return {'status': json['status'], 'error': json['error_message']};
         }
       } else {
-        developer.log('HTTP Error: ${response.statusCode}');
+        print('[DirectionsService] HTTP Error: ${response.statusCode}');
         return {'status': 'ERROR', 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      developer.log('Exception: $e');
+      print('[DirectionsService] Exception: $e');
       return {'status': 'ERROR', 'error': e.toString()};
     }
   }

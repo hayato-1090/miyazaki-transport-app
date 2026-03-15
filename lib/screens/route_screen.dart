@@ -32,6 +32,7 @@ class _RouteScreenState extends State<RouteScreen> {
       return;
     }
 
+    print('[RouteScreen] Searching route: ${originController.text} -> ${destinationController.text}, mode: $selectedMode');
     setState(() => isLoading = true);
 
     final result = await widget.directionsService.getDirections(
@@ -39,6 +40,8 @@ class _RouteScreenState extends State<RouteScreen> {
       destination: destinationController.text,
       mode: selectedMode,
     );
+
+    print('[RouteScreen] Result: $result');
 
     setState(() {
       routeResult = result;
