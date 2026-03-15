@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'detail_screen.dart';
+import 'fare_calculator_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final Map<String, String> transportDetails = {
@@ -15,6 +16,19 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('宮崎の交通手段'),
         backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.calculate),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FareCalculatorScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: GridView.count(
         crossAxisCount: 2,
