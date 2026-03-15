@@ -1,8 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../services/directions_service.dart';
 import 'detail_screen.dart';
 import 'fare_calculator_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late DirectionsService directionsService;
+  
+  @override
+  void initState() {
+    super.initState();
+    // API キーを .env から読み込む
+    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+    directionsService = DirectionsService(apiKey: apiKey);
+  }
+
   final Map<String, String> transportDetails = {
     'バス': '宮崎市内を走る主要なバス路線\n・運行本数：1時間に複数本\n・料金：100円～300円\n・営業時間：5:00～23:00',
     '電車': '宮崎交通線で運行\n・駅数：20駅以上\n・料金：150円～500円\n・営業時間：6:00～22:00',
