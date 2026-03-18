@@ -13,7 +13,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late DirectionsService directionsService;
-  
+
   @override
   void initState() {
     super.initState();
@@ -33,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('宮崎の交通手段'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Color(0xFF1565C0),
         actions: [
           IconButton(
             icon: Icon(Icons.map),
@@ -71,65 +71,114 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: GridView.count(
-        crossAxisCount: 2,
-        padding: EdgeInsets.all(8),
-        children: <Widget>[
-          TransportCard(
-            label: 'バス',
-            icon: Icons.directions_bus,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailScreen(
-                    transportDetails: transportDetails['バス']!,
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '宮崎市の交通案内',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              );
-            },
+                Text(
+                  '目的地に合わせて最適な交通手段を選ぼう',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
           ),
-          TransportCard(
-            label: '電車',
-            icon: Icons.directions_railway,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailScreen(
-                    transportDetails: transportDetails['電車']!,
-                  ),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              padding: EdgeInsets.all(16),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.85,
+              children: <Widget>[
+                TransportCard(
+                  label: 'バス',
+                  description: '市内全域をカバー',
+                  priceHint: '¥100〜',
+                  icon: Icons.directions_bus,
+                  color: Colors.orange,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailScreen(
+                          transportDetails: transportDetails['バス']!,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-          TransportCard(
-            label: 'タクシー',
-            icon: Icons.local_taxi,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailScreen(
-                    transportDetails: transportDetails['タクシー']!,
-                  ),
+                TransportCard(
+                  label: '電車',
+                  description: '駅間を素早く移動',
+                  priceHint: '¥150〜',
+                  icon: Icons.directions_railway,
+                  color: Colors.blue,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailScreen(
+                          transportDetails: transportDetails['電車']!,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-          TransportCard(
-            label: '自転車',
-            icon: Icons.pedal_bike,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailScreen(
-                    transportDetails: transportDetails['自転車']!,
-                  ),
+                TransportCard(
+                  label: 'タクシー',
+                  description: 'ドアツードアで便利',
+                  priceHint: '¥600〜',
+                  icon: Icons.local_taxi,
+                  color: Colors.amber,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailScreen(
+                          transportDetails: transportDetails['タクシー']!,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+                TransportCard(
+                  label: '自転車',
+                  description: 'エコで健康的な移動',
+                  priceHint: '¥500/日',
+                  icon: Icons.pedal_bike,
+                  color: Colors.green,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailScreen(
+                          transportDetails: transportDetails['自転車']!,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -139,28 +188,68 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class TransportCard extends StatelessWidget {
   final String label;
+  final String description;
+  final String priceHint;
   final IconData icon;
+  final Color color;
   final VoidCallback onTap;
 
   TransportCard({
+    Key? key,
     required this.label,
+    required this.description,
+    required this.priceHint,
     required this.icon,
+    required this.color,
     required this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        elevation: 4,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(icon, size: 50, color: Colors.blue),
-            SizedBox(height: 10),
-            Text(label, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          ],
+    return Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 40, color: color),
+              ),
+              SizedBox(height: 12),
+              Text(
+                label,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 6),
+              Text(
+                priceHint,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
