@@ -74,12 +74,15 @@ class _RouteScreenState extends State<RouteScreen> {
           SizedBox(height: 16),
           DropdownButton<String>(
             value: selectedMode,
-            items: ['driving', 'transit', 'walking', 'bicycling']
-                .map((mode) => DropdownMenuItem(
-                      value: mode,
-                      child: Text(mode),
-                    ))
-                .toList(),
+            items: const {
+              'driving': '車',
+              'transit': '電車・バス',
+              'walking': '徒歩',
+              'bicycling': '自転車',
+            }.entries.map((e) => DropdownMenuItem(
+                  value: e.key,
+                  child: Text(e.value),
+                )).toList(),
             onChanged: (value) => setState(() => selectedMode = value ?? 'driving'),
           ),
           SizedBox(height: 16),
