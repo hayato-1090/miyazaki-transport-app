@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -17,12 +18,12 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   Position? _currentPosition;
   String _currentAddress = '住所を取得中...';
   bool _isLoading = true;
-  Set<Marker> _markers = {};
-  Set<Marker> _busStopMarkers = {};
+  List<Marker> _markers = [];
+  List<Marker> _busStopMarkers = [];
 
   // バス停の表示/非表示トグル
   bool _showBusStops = true;
@@ -49,16 +50,15 @@ class _MapScreenState extends State<MapScreen> {
       final geoJson = jsonDecode(jsonString) as Map<String, dynamic>;
       final features = geoJson['features'] as List<dynamic>;
 
-      final markers = <Marker>{};
+      final markers = <Marker>[];
       for (int i = 0; i < features.length; i++) {
         final stop = BusStop.fromGeoJson(features[i] as Map<String, dynamic>);
         markers.add(
           Marker(
-            markerId: MarkerId('bus_stop_$i'),
-            position: LatLng(stop.latitude, stop.longitude),
-            infoWindow: InfoWindow(
-              title: stop.name,
-              snippet: '${stop.operator}　ここから料金計算 →',
+            point: LatLng(stop.latitude, stop.longitude),
+            width: 30,
+            height: 30,
+            child: GestureDetector(
               onTap: () {
                 Navigator.push(
                   context,
@@ -68,9 +68,11 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 );
               },
+              child: Tooltip(
+                message: '${stop.name}　ここから料金計算 →',
+                child: Icon(Icons.directions_bus, color: Colors.green, size: 24),
+              ),
             ),
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-                BitmapDescriptor.hueGreen),
           ),
         );
       }
@@ -129,29 +131,23 @@ class _MapScreenState extends State<MapScreen> {
         _currentAddress = address;
         _isLoading = false;
         _nearestStops = nearest;
-        _markers = {
+        _markers = [
           Marker(
-            markerId: MarkerId('current_location'),
-            position: LatLng(position.latitude, position.longitude),
-            infoWindow: InfoWindow(
-              title: '現在地',
-              snippet: address,
+            point: LatLng(position.latitude, position.longitude),
+            width: 40,
+            height: 40,
+            child: Tooltip(
+              message: '現在地: $address',
+              child: Icon(Icons.location_pin, color: Colors.blue, size: 36),
             ),
-            // 青色マーカーで現在地を明確に区別
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-                BitmapDescriptor.hueAzure),
           ),
-        };
+        ];
       });
 
       // 地図を現在地に移動
-      _mapController?.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(position.latitude, position.longitude),
-            zoom: 15.0,
-          ),
-        ),
+      _mapController.move(
+        LatLng(position.latitude, position.longitude),
+        15.0,
       );
     } catch (e) {
       setState(() {
@@ -184,18 +180,22 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentLatLng = _currentPosition != null
+        ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+        : _defaultPosition;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('現在地マップ'),
         backgroundColor: Colors.blue,
         actions: [
-          // バス停表示トグルボタン（ONは白アイコン、OFFはコンテナで背景付きで明示）
+          // バス停表示トグルボタン
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
             child: Material(
@@ -234,35 +234,24 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _currentPosition != null
-                  ? LatLng(
-                      _currentPosition!.latitude, _currentPosition!.longitude)
-                  : _defaultPosition,
-              zoom: 14.0,
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: currentLatLng,
+              initialZoom: 14.0,
             ),
-            onMapCreated: (controller) {
-              _mapController = controller;
-              if (_currentPosition != null) {
-                _mapController!.animateCamera(
-                  CameraUpdate.newCameraPosition(
-                    CameraPosition(
-                      target: LatLng(_currentPosition!.latitude,
-                          _currentPosition!.longitude),
-                      zoom: 15.0,
-                    ),
-                  ),
-                );
-              }
-            },
-            // バス停表示トグルを反映
-            markers: _showBusStops
-                ? {..._markers, ..._busStopMarkers}
-                : {..._markers},
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: true,
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.miyazaki_transport_app',
+              ),
+              MarkerLayer(
+                markers: [
+                  ..._markers,
+                  ...(_showBusStops ? _busStopMarkers : []),
+                ],
+              ),
+            ],
           ),
 
           // 住所表示カード（最近接バス停がある場合は上に位置）
