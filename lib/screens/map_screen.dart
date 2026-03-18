@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../models/bus_stop.dart';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -16,6 +18,7 @@ class _MapScreenState extends State<MapScreen> {
   String _currentAddress = '住所を取得中...';
   bool _isLoading = true;
   Set<Marker> _markers = {};
+  Set<Marker> _busStopMarkers = {};
 
   // 宮崎市役所をデフォルト位置に設定
   static const LatLng _defaultPosition = LatLng(31.9077, 131.4202);
@@ -24,6 +27,37 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _loadBusStops();
+  }
+
+  Future<void> _loadBusStops() async {
+    try {
+      final jsonString = await rootBundle.loadString('assets/bus_stops/miyazaki_bus_stops.json');
+      final geoJson = jsonDecode(jsonString) as Map<String, dynamic>;
+      final features = geoJson['features'] as List<dynamic>;
+
+      final markers = <Marker>{};
+      for (int i = 0; i < features.length; i++) {
+        final stop = BusStop.fromGeoJson(features[i] as Map<String, dynamic>);
+        markers.add(
+          Marker(
+            markerId: MarkerId('bus_stop_$i'),
+            position: LatLng(stop.latitude, stop.longitude),
+            infoWindow: InfoWindow(
+              title: stop.name,
+              snippet: stop.operator,
+            ),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          ),
+        );
+      }
+
+      setState(() {
+        _busStopMarkers = markers;
+      });
+    } catch (e) {
+      // 読み込み失敗時はマーカーなしで続行
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -149,7 +183,7 @@ class _MapScreenState extends State<MapScreen> {
                 );
               }
             },
-            markers: _markers,
+            markers: {..._markers, ..._busStopMarkers},
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: true,

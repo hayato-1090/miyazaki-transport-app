@@ -1,0 +1,33 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[130.8032,32.0508]},"properties":{"n":"宮交シティ","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4236,31.9165]},"properties":{"n":"宮崎駅","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.6719,32.5898]},"properties":{"n":"延岡駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4217,31.9090]},"properties":{"n":"南宮崎駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4189,31.8944]},"properties":{"n":"恒久","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4315,31.9157]},"properties":{"n":"瀬頭","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.3090,32.7097]},"properties":{"n":"高千穂バスセンター","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.3843,32.6621]},"properties":{"n":"日向市駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.1051,31.7833]},"properties":{"n":"都城駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4283,31.9065]},"properties":{"n":"大淀大橋","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4232,31.9166]},"properties":{"n":"橘通り","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4303,31.9145]},"properties":{"n":"市役所前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.1596,32.6745]},"properties":{"n":"門川駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4580,31.9103]},"properties":{"n":"宮崎空港","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.1946,32.6829]},"properties":{"n":"細島","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.0184,31.9302]},"properties":{"n":"小林駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.0700,31.8418]},"properties":{"n":"西諸県庁前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.1515,31.7889]},"properties":{"n":"三股駅前","o":"三股町"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.3883,31.8665]},"properties":{"n":"田野駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.3204,31.8319]},"properties":{"n":"清武駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.1125,31.7055]},"properties":{"n":"梅北","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.1093,31.7330]},"properties":{"n":"五十市駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4368,31.8283]},"properties":{"n":"木花駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.5565,32.2595]},"properties":{"n":"高鍋駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.3701,31.5347]},"properties":{"n":"油津駅前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.0201,31.9351]},"properties":{"n":"小林病院前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.4291,32.4399]},"properties":{"n":"日向学院前","o":"宮崎交通（株）"}},
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[131.5268,32.1961]},"properties":{"n":"新富町役場前","o":"新富町"}}
+  ]
+}
