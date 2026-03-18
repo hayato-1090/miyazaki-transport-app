@@ -6,7 +6,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/bus_stop.dart';
+import '../services/bus_stop_service.dart';
+import 'fare_calculator_screen.dart';
 
+/// 地図画面
+/// バス停マーカー・現在地・最近接バス停パネルを表示する
 class MapScreen extends StatefulWidget {
   @override
   _MapScreenState createState() => _MapScreenState();
@@ -20,6 +24,14 @@ class _MapScreenState extends State<MapScreen> {
   Set<Marker> _markers = {};
   Set<Marker> _busStopMarkers = {};
 
+  // バス停の表示/非表示トグル
+  bool _showBusStops = true;
+
+  // 最近接バス停リスト
+  List<BusStopWithDistance> _nearestStops = [];
+
+  final BusStopService _busStopService = BusStopService();
+
   // 宮崎市役所をデフォルト位置に設定
   static const LatLng _defaultPosition = LatLng(31.9077, 131.4202);
 
@@ -32,7 +44,8 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _loadBusStops() async {
     try {
-      final jsonString = await rootBundle.loadString('assets/bus_stops/miyazaki_bus_stops.json');
+      final jsonString =
+          await rootBundle.loadString('assets/bus_stops/miyazaki_bus_stops.json');
       final geoJson = jsonDecode(jsonString) as Map<String, dynamic>;
       final features = geoJson['features'] as List<dynamic>;
 
@@ -45,9 +58,19 @@ class _MapScreenState extends State<MapScreen> {
             position: LatLng(stop.latitude, stop.longitude),
             infoWindow: InfoWindow(
               title: stop.name,
-              snippet: stop.operator,
+              snippet: '${stop.operator}　ここから料金計算 →',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        FareCalculatorScreen(initialOrigin: stop.name),
+                  ),
+                );
+              },
             ),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueGreen),
           ),
         );
       }
@@ -91,12 +114,21 @@ class _MapScreenState extends State<MapScreen> {
       );
 
       // 逆ジオコーディングで住所を取得
-      String address = await _getAddressFromLatLng(position.latitude, position.longitude);
+      String address =
+          await _getAddressFromLatLng(position.latitude, position.longitude);
+
+      // 最近接バス停を検索
+      final nearest = await _busStopService.findNearest(
+        position.latitude,
+        position.longitude,
+        limit: 3,
+      );
 
       setState(() {
         _currentPosition = position;
         _currentAddress = address;
         _isLoading = false;
+        _nearestStops = nearest;
         _markers = {
           Marker(
             markerId: MarkerId('current_location'),
@@ -105,7 +137,9 @@ class _MapScreenState extends State<MapScreen> {
               title: '現在地',
               snippet: address,
             ),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+            // 青色マーカーで現在地を明確に区別
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueAzure),
           ),
         };
       });
@@ -160,13 +194,51 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         title: Text('現在地マップ'),
         backgroundColor: Colors.blue,
+        actions: [
+          // バス停表示トグルボタン（ONは白アイコン、OFFはコンテナで背景付きで明示）
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: Material(
+              color: _showBusStops
+                  ? Colors.white.withOpacity(0.25)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => setState(() => _showBusStops = !_showBusStops),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.directions_bus,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      Text(
+                        _showBusStops ? 'ON' : 'OFF',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Stack(
         children: [
           GoogleMap(
             initialCameraPosition: CameraPosition(
               target: _currentPosition != null
-                  ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                  ? LatLng(
+                      _currentPosition!.latitude, _currentPosition!.longitude)
                   : _defaultPosition,
               zoom: 14.0,
             ),
@@ -176,21 +248,26 @@ class _MapScreenState extends State<MapScreen> {
                 _mapController!.animateCamera(
                   CameraUpdate.newCameraPosition(
                     CameraPosition(
-                      target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                      target: LatLng(_currentPosition!.latitude,
+                          _currentPosition!.longitude),
                       zoom: 15.0,
                     ),
                   ),
                 );
               }
             },
-            markers: {..._markers, ..._busStopMarkers},
+            // バス停表示トグルを反映
+            markers: _showBusStops
+                ? {..._markers, ..._busStopMarkers}
+                : {..._markers},
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: true,
           ),
-          // 住所表示カード
+
+          // 住所表示カード（最近接バス停がある場合は上に位置）
           Positioned(
-            bottom: 80,
+            bottom: _nearestStops.isNotEmpty ? 200 : 80,
             left: 16,
             right: 16,
             child: Card(
@@ -208,7 +285,8 @@ class _MapScreenState extends State<MapScreen> {
                                 SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
                                 ),
                                 SizedBox(width: 8),
                                 Text('現在地を取得中...'),
@@ -224,6 +302,56 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
+
+          // 最近接バス停カード
+          if (_nearestStops.isNotEmpty)
+            Positioned(
+              bottom: 80,
+              left: 0,
+              right: 0,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Text(
+                      '近くのバス停',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Colors.white,
+                        shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: _nearestStops.length,
+                      itemBuilder: (_, i) {
+                        final item = _nearestStops[i];
+                        return _NearestStopCard(
+                          stop: item.busStop,
+                          distance: item.distanceText,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => FareCalculatorScreen(
+                                  initialOrigin: item.busStop.name,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
       floatingActionButton: Semantics(
@@ -236,6 +364,73 @@ class _MapScreenState extends State<MapScreen> {
               ? CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
               : Icon(Icons.my_location),
           tooltip: '現在地を取得',
+        ),
+      ),
+    );
+  }
+}
+
+/// 最近接バス停ミニカード
+class _NearestStopCard extends StatelessWidget {
+  final BusStop stop;
+  final String distance;
+  final VoidCallback onTap;
+
+  const _NearestStopCard({
+    Key? key,
+    required this.stop,
+    required this.distance,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.symmetric(horizontal: 4),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 140,
+          padding: EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.directions_bus, color: Colors.green, size: 16),
+                  SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      stop.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 4),
+              Text(
+                distance,
+                style: TextStyle(color: Colors.grey[600], fontSize: 11),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '料金計算 →',
+                style: TextStyle(
+                  color: Color(0xFF1565C0),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
