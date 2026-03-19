@@ -40,6 +40,14 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _showOriginSuggestions = false;
   bool _showDestinationSuggestions = false;
 
+  // 交通手段リスト（Flutter Web の const Map + .entries バグを回避するためListで定義）
+  static const List<Map<String, String>> _transportModes = [
+    {'value': 'driving', 'label': '車'},
+    {'value': 'transit', 'label': '電車・���ス'},
+    {'value': 'walking', 'label': '徒歩'},
+    {'value': 'bicycling', 'label': '自転車'},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -101,7 +109,7 @@ class _RouteScreenState extends State<RouteScreen> {
   void searchRoute() async {
     if (originController.text.isEmpty || destinationController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('出発地と目的地を入力してください')),
+        SnackBar(content: Text('出発地と目的地を入力してください')), 
       );
       return;
     }
@@ -140,7 +148,7 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('ルート検索')),
+      appBar: AppBar(title: Text('ルート検索')), 
       body: GestureDetector(
         onTap: () {
           // サジェストを閉じる
@@ -222,15 +230,12 @@ class _RouteScreenState extends State<RouteScreen> {
             DropdownButton<String>(
               value: selectedMode,
               isExpanded: true,
-              items: const {
-                'driving': '車',
-                'transit': '電車・バス',
-                'walking': '徒歩',
-                'bicycling': '自転車',
-              }.entries.map((e) => DropdownMenuItem(
-                    value: e.key,
-                    child: Text(e.value),
-                  )).toList(),
+              items: _transportModes
+                  .map((e) => DropdownMenuItem<String>(
+                        value: e['value'],
+                        child: Text(e['label']!),
+                      ))
+                  .toList(),
               onChanged: (value) =>
                   setState(() => selectedMode = value ?? 'driving'),
             ),
