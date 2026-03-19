@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/bus_stop.dart';
@@ -263,17 +262,17 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<String> _getAddressFromLatLng(double lat, double lng) async {
     try {
-      final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
-      if (apiKey.isEmpty) return '($lat, $lng)';
-
-      final url =
-          'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey&language=ja';
-      final response = await http.get(Uri.parse(url));
-
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json&accept-language=ja',
+      );
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'miyazaki-transport-app'},
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        if (json['status'] == 'OK' && json['results'].isNotEmpty) {
-          return json['results'][0]['formatted_address'];
+        if (json['display_name'] != null) {
+          return json['display_name'] as String;
         }
       }
     } catch (e) {
