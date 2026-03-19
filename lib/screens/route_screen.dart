@@ -41,9 +41,9 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _showDestinationSuggestions = false;
 
   // 交通手段リスト（Flutter Web の const Map + .entries バグを回避するためListで定義）
-  static const List<Map<String, String>> _transportModes = [
+  static final List<Map<String, String>> _transportModes = [
     {'value': 'driving', 'label': '車'},
-    {'value': 'transit', 'label': '電車・���ス'},
+    {'value': 'transit', 'label': '電車・バス'},
     {'value': 'walking', 'label': '徒歩'},
     {'value': 'bicycling', 'label': '自転車'},
   ];
@@ -52,7 +52,8 @@ class _RouteScreenState extends State<RouteScreen> {
   void initState() {
     super.initState();
     originController = TextEditingController(text: widget.initialOrigin ?? '');
-    destinationController = TextEditingController(text: widget.initialDestination ?? '');
+    destinationController =
+        TextEditingController(text: widget.initialDestination ?? '');
     _loadBusStops();
   }
 
@@ -109,7 +110,7 @@ class _RouteScreenState extends State<RouteScreen> {
   void searchRoute() async {
     if (originController.text.isEmpty || destinationController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('出発地と目的地を入力してください')), 
+        const SnackBar(content: Text('出発地と目的地を入力してください')), 
       );
       return;
     }
@@ -148,22 +149,25 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('ルート検索')), 
+      appBar: AppBar(
+        title: const Text('ルート検索'),
+        backgroundColor: const Color(0xFF1565C0),
+        foregroundColor: Colors.white,
+      ),
       body: GestureDetector(
         onTap: () {
-          // サジェストを閉じる
           setState(() {
             _showOriginSuggestions = false;
             _showDestinationSuggestions = false;
           });
         },
         child: ListView(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           children: [
             // --- 出発地 ---
             TextField(
               controller: originController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: '出発地',
                 hintText: 'バス停名または住所を入力',
                 prefixIcon: Icon(Icons.trip_origin, color: Colors.blue),
@@ -179,7 +183,6 @@ class _RouteScreenState extends State<RouteScreen> {
                 }
               },
             ),
-            // 出発地サジェスト
             if (_showOriginSuggestions)
               _buildSuggestionList(
                 _originSuggestions,
@@ -191,12 +194,12 @@ class _RouteScreenState extends State<RouteScreen> {
                   });
                 },
               ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // --- 目的地 ---
             TextField(
               controller: destinationController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: '目的地',
                 hintText: 'バス停名または住所を入力',
                 prefixIcon: Icon(Icons.place, color: Colors.red),
@@ -212,7 +215,6 @@ class _RouteScreenState extends State<RouteScreen> {
                 }
               },
             ),
-            // 目的地サジェスト
             if (_showDestinationSuggestions)
               _buildSuggestionList(
                 _destinationSuggestions,
@@ -224,12 +226,15 @@ class _RouteScreenState extends State<RouteScreen> {
                   });
                 },
               ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // --- 交通手段選択 ---
-            DropdownButton<String>(
+            DropdownButtonFormField<String>(
               value: selectedMode,
-              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: '交通手段',
+                border: OutlineInputBorder(),
+              ),
               items: _transportModes
                   .map((e) => DropdownMenuItem<String>(
                         value: e['value'],
@@ -239,20 +244,25 @@ class _RouteScreenState extends State<RouteScreen> {
               onChanged: (value) =>
                   setState(() => selectedMode = value ?? 'driving'),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             ElevatedButton.icon(
               onPressed: isLoading ? null : searchRoute,
               icon: isLoading
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Icon(Icons.search),
-              label: Text('ルートを検索'),
+                  : const Icon(Icons.search),
+              label: const Text('ルートを検索'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1565C0),
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(48),
+              ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // --- 検索結果 ---
             if (routeResult != null)
@@ -262,37 +272,36 @@ class _RouteScreenState extends State<RouteScreen> {
                 ),
                 elevation: 3,
                 child: Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         '検索結果',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Divider(),
+                      const Divider(),
                       if (routeResult!['status'] == 'OK') ...[
                         _resultRow(Icons.straighten, Colors.blue,
                             '距離', routeResult!['distance'] ?? 'N/A'),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         _resultRow(Icons.access_time, Colors.orange,
                             '所要時間', routeResult!['duration'] ?? 'N/A'),
-                        // バス停間の推定料金
                         Builder(builder: (_) {
                           final fare = _estimateFare();
-                          if (fare == null) return SizedBox.shrink();
+                          if (fare == null) return const SizedBox.shrink();
                           return Column(
                             children: [
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               _resultRow(Icons.attach_money, Colors.green,
                                   '推定料金', fare),
                             ],
                           );
                         }),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         OutlinedButton.icon(
                           onPressed: () {
                             Navigator.push(
@@ -304,11 +313,10 @@ class _RouteScreenState extends State<RouteScreen> {
                               ),
                             );
                           },
-                          icon: Icon(Icons.calculate),
-                          label: Text('料金計算機で詳しく計算'),
+                          icon: const Icon(Icons.calculate),
+                          label: const Text('料金計算機で詳しく計算'),
                         ),
-                        SizedBox(height: 8),
-                        // マップで確認ボタン
+                        const SizedBox(height: 8),
                         if (routeResult!['polyline'] != null)
                           ElevatedButton.icon(
                             onPressed: () {
@@ -324,7 +332,7 @@ class _RouteScreenState extends State<RouteScreen> {
                               );
                             },
                             icon: const Icon(Icons.map),
-                            label: const Text('🗺️ マップで確認（コイン付き）'),
+                            label: const Text('マップで確認（コイン付き）'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               foregroundColor: Colors.white,
@@ -332,8 +340,8 @@ class _RouteScreenState extends State<RouteScreen> {
                           ),
                       ] else ...[
                         Text(
-                          'ルートが見つかりませんでした（${routeResult!['status']}）',
-                          style: TextStyle(color: Colors.red),
+                          'ルートが見つかりませんでした\n${routeResult!['error'] ?? routeResult!['status']}',
+                          style: const TextStyle(color: Colors.red),
                         ),
                       ],
                     ],
@@ -355,15 +363,16 @@ class _RouteScreenState extends State<RouteScreen> {
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(8),
         color: Colors.white,
-        boxShadow: [BoxShadow(blurRadius: 4, color: Colors.black12)],
+        boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black12)],
       ),
       child: Column(
         children: suggestions.map((stop) {
           return ListTile(
             dense: true,
-            leading: Icon(Icons.directions_bus, size: 18, color: Colors.green),
-            title: Text(stop.name, style: TextStyle(fontSize: 14)),
-            subtitle: Text(stop.operator, style: TextStyle(fontSize: 11)),
+            leading:
+                const Icon(Icons.directions_bus, size: 18, color: Colors.green),
+            title: Text(stop.name, style: const TextStyle(fontSize: 14)),
+            subtitle: Text(stop.operator, style: const TextStyle(fontSize: 11)),
             onTap: () => onSelect(stop),
           );
         }).toList(),
@@ -375,15 +384,14 @@ class _RouteScreenState extends State<RouteScreen> {
     return Row(
       children: [
         Icon(icon, color: color, size: 18),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Text('$label: ', style: TextStyle(color: Colors.grey[600])),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
       ],
     );
   }
-}
