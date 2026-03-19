@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../services/directions_service.dart';
 import '../services/bus_stop_service.dart';
+import '../services/coin_service.dart';
 import '../models/bus_stop.dart';
 import 'detail_screen.dart';
 import 'fare_calculator_screen.dart';
 import 'route_screen.dart';
 import 'map_screen.dart';
+import 'quest_screen.dart';
+import 'shop_screen.dart';
+import 'profile_screen.dart';
 
 /// ホーム画面
-/// ボトムナビゲーション付きのメイン画面
+/// 5タブのボトムナビゲーション付きメイン画面
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -34,15 +38,16 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _HomeTab(directionsService: directionsService),
           MapScreen(),
-          FareCalculatorScreen(),
-          RouteScreen(directionsService: directionsService),
+          const QuestScreen(),
+          const ShopScreen(),
+          const ProfileScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xFF1565C0),
+        selectedItemColor: const Color(0xFF1565C0),
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
@@ -51,15 +56,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: '地図',
+            label: 'マップ',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calculate),
-            label: '料金計算',
+            icon: Icon(Icons.emoji_events),
+            label: 'クエスト',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.route),
-            label: 'ルート',
+            icon: Icon(Icons.shopping_bag),
+            label: 'ショップ',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'プロフィール',
           ),
         ],
       ),
@@ -78,6 +87,7 @@ class _HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<_HomeTab> {
   final BusStopService _busStopService = BusStopService();
+  final CoinService _coinService = CoinService();
   List<BusStop> _nearbyStops = [];
 
   final Map<String, String> transportDetails = {
@@ -94,7 +104,6 @@ class _HomeTabState extends State<_HomeTab> {
   }
 
   Future<void> _loadNearbyStops() async {
-    // 現在地が取得できない場合はデフォルトの最初の3件を表示
     final stops = await _busStopService.loadBusStops();
     setState(() {
       _nearbyStops = stops.take(3).toList();
@@ -105,18 +114,46 @@ class _HomeTabState extends State<_HomeTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('宮崎の交通手段'),
-        backgroundColor: Color(0xFF1565C0),
+        title: const Text('宮崎の交通手段'),
+        backgroundColor: const Color(0xFF1565C0),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          // コイン枚数表示
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade700,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🪙', style: TextStyle(fontSize: 13)),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${_coinService.totalCoins}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // --- グラデーションバナー ---
+          // --- 広告バナー or グラデーションバナー ---
           Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -126,7 +163,7 @@ class _HomeTabState extends State<_HomeTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   '宮崎市の交通案内',
                   style: TextStyle(
                     color: Colors.white,
@@ -135,10 +172,74 @@ class _HomeTabState extends State<_HomeTab> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  '目的地に合わせて最適な交通手段を選ぼう',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  _coinService.adUnlocked && _coinService.customAdMessage.isNotEmpty
+                      ? _coinService.customAdMessage
+                      : '目的地に合わせて最適な交通手段を選ぼう',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+
+          // --- コンパクト操作ボタン行 ---
+          Container(
+            color: Colors.grey.shade100,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _CompactButton(
+                    icon: Icons.directions_bus,
+                    label: 'バス検索',
+                    color: const Color(0xFFE65100),
+                    onTap: () {
+                      _coinService.recordBusSearch();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RouteScreen(
+                            directionsService: widget.directionsService,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _CompactButton(
+                    icon: Icons.pedal_bike,
+                    label: '自転車検索',
+                    color: const Color(0xFF2E7D32),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DetailScreen(
+                            transportDetails: transportDetails['自転車']!,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _CompactButton(
+                    icon: Icons.calculate,
+                    label: '料金計算',
+                    color: const Color(0xFF1565C0),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FareCalculatorScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -148,12 +249,12 @@ class _HomeTabState extends State<_HomeTab> {
           if (_nearbyStops.isNotEmpty)
             Container(
               color: Colors.grey.shade100,
-              padding: EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.only(bottom: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       '近くのバス停',
                       style: TextStyle(
@@ -163,12 +264,12 @@ class _HomeTabState extends State<_HomeTab> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   SizedBox(
                     height: 80,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       itemCount: _nearbyStops.length,
                       itemBuilder: (_, i) {
                         final stop = _nearbyStops[i];
@@ -196,7 +297,7 @@ class _HomeTabState extends State<_HomeTab> {
           Expanded(
             child: GridView.count(
               crossAxisCount: 2,
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               childAspectRatio: 0.85,
@@ -207,7 +308,7 @@ class _HomeTabState extends State<_HomeTab> {
                   priceHint: '¥170〜',
                   detail: '営業時間 5:00〜23:00',
                   icon: Icons.directions_bus,
-                  color: Color(0xFFE65100),
+                  color: const Color(0xFFE65100),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -225,7 +326,7 @@ class _HomeTabState extends State<_HomeTab> {
                   priceHint: '¥150〜',
                   detail: '営業時間 6:00〜22:00',
                   icon: Icons.directions_railway,
-                  color: Color(0xFF1565C0),
+                  color: const Color(0xFF1565C0),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -243,7 +344,7 @@ class _HomeTabState extends State<_HomeTab> {
                   priceHint: '¥500〜',
                   detail: '24時間営業',
                   icon: Icons.local_taxi,
-                  color: Color(0xFFF9A825),
+                  color: const Color(0xFFF9A825),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -261,7 +362,7 @@ class _HomeTabState extends State<_HomeTab> {
                   priceHint: '¥500/日',
                   detail: '営業時間 7:00〜20:00',
                   icon: Icons.pedal_bike,
-                  color: Color(0xFF2E7D32),
+                  color: const Color(0xFF2E7D32),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -282,6 +383,51 @@ class _HomeTabState extends State<_HomeTab> {
   }
 }
 
+/// コンパクト操作ボタン
+class _CompactButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _CompactButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// 近くのバス停チップ
 class _NearbyBusStopChip extends StatelessWidget {
   final BusStop stop;
@@ -292,7 +438,7 @@ class _NearbyBusStopChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: InkWell(
@@ -300,27 +446,28 @@ class _NearbyBusStopChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         child: Container(
           width: 130,
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Row(
                 children: [
-                  Icon(Icons.directions_bus, color: Colors.green, size: 14),
-                  SizedBox(width: 4),
+                  const Icon(Icons.directions_bus,
+                      color: Colors.green, size: 14),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       stop.name,
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 12),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 4),
-              Text(
+              const SizedBox(height: 4),
+              const Text(
                 '料金計算 →',
                 style: TextStyle(
                   color: Color(0xFF1565C0),
@@ -373,7 +520,7 @@ class _TransportCard extends StatelessWidget {
               height: 6,
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
@@ -381,7 +528,7 @@ class _TransportCard extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -394,20 +541,20 @@ class _TransportCard extends StatelessWidget {
                       ),
                       child: Icon(icon, size: 34, color: color),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     Text(
                       label,
-                      style: TextStyle(
+                      style: const TextStyle(
                           fontSize: 17, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 3),
+                    const SizedBox(height: 3),
                     Text(
                       description,
                       style:
                           TextStyle(fontSize: 11, color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       priceHint,
                       style: TextStyle(
@@ -416,10 +563,11 @@ class _TransportCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       detail,
-                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                      style: TextStyle(
+                          fontSize: 10, color: Colors.grey[500]),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -432,3 +580,4 @@ class _TransportCard extends StatelessWidget {
     );
   }
 }
+

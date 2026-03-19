@@ -8,11 +8,18 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/bus_stop.dart';
 import '../services/bus_stop_service.dart';
+import '../services/coin_service.dart';
+import '../services/location_tracking_service.dart';
 import 'fare_calculator_screen.dart';
 
 /// 地図画面
-/// バス停マーカー・現在地・最近接バス停パネルを表示する
+/// バス停マーカー・現在地・コインマーカー・ルートポリライン を表示する
 class MapScreen extends StatefulWidget {
+  /// ルート検索結果から渡されるポリライン（encoded polyline）
+  final String? encodedPolyline;
+
+  const MapScreen({Key? key, this.encodedPolyline}) : super(key: key);
+
   @override
   _MapScreenState createState() => _MapScreenState();
 }
@@ -24,6 +31,8 @@ class _MapScreenState extends State<MapScreen> {
   bool _isLoading = true;
   List<Marker> _markers = [];
   List<Marker> _busStopMarkers = [];
+  List<Marker> _coinMarkers = [];
+  List<Polyline> _polylines = [];
 
   // バス停の表示/非表示トグル
   bool _showBusStops = true;
@@ -32,6 +41,8 @@ class _MapScreenState extends State<MapScreen> {
   List<BusStopWithDistance> _nearestStops = [];
 
   final BusStopService _busStopService = BusStopService();
+  final CoinService _coinService = CoinService();
+  final LocationTrackingService _trackingService = LocationTrackingService();
 
   // 宮崎市役所をデフォルト位置に設定
   static const LatLng _defaultPosition = LatLng(31.9077, 131.4202);
@@ -41,6 +52,99 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     _getCurrentLocation();
     _loadBusStops();
+
+    // ルート検索結果のポリラインがあれば処理
+    if (widget.encodedPolyline != null && widget.encodedPolyline!.isNotEmpty) {
+      _setupRoute(widget.encodedPolyline!);
+    } else {
+      // 既存のルートコインを表示
+      _refreshCoinMarkers();
+    }
+
+    // コイン取得コールバックをセット
+    _trackingService.onCoinsCollected = (collected) {
+      if (!mounted) return;
+      setState(() => _refreshCoinMarkers());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🪙 +${collected.length * 2}コイン獲得！'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    };
+    _trackingService.startTracking();
+  }
+
+  @override
+  void dispose() {
+    _trackingService.stopTracking();
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  // --- スキンに応じたマーカー色を返す ---
+  Color _skinColor() {
+    switch (_coinService.selectedSkin) {
+      case 'blue':
+        return Colors.blue;
+      case 'white':
+        return Colors.white;
+      default:
+        return Colors.red;
+    }
+  }
+
+  // --- ルート設定: ポリラインとコインマーカーをセット ---
+  Future<void> _setupRoute(String encodedPolyline) async {
+    await _coinService.setRouteCoins(encodedPolyline);
+
+    final points = _coinService.decodePolyline(encodedPolyline);
+    setState(() {
+      _polylines = [
+        Polyline(
+          points: points,
+          color: Colors.blue,
+          strokeWidth: 4.0,
+        ),
+      ];
+    });
+    _refreshCoinMarkers();
+
+    // ルート先頭に地図を移動
+    if (points.isNotEmpty) {
+      _mapController.move(points.first, 14.0);
+    }
+  }
+
+  // --- コインマーカーを更新する ---
+  void _refreshCoinMarkers() {
+    final coins = _coinService.routeCoins;
+    setState(() {
+      _coinMarkers = coins.where((c) => !c.isCollected).map((coin) {
+        return Marker(
+          point: coin.position,
+          width: 28,
+          height: 28,
+          child: Tooltip(
+            message: '🪙 コイン (+2)',
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.amber.shade600,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: const [
+                  BoxShadow(blurRadius: 3, color: Colors.black26),
+                ],
+              ),
+              child: const Center(
+                child: Text('🪙', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ),
+        );
+      }).toList();
+    });
   }
 
   Future<void> _loadBusStops() async {
@@ -138,7 +242,7 @@ class _MapScreenState extends State<MapScreen> {
             height: 40,
             child: Tooltip(
               message: '現在地: $address',
-              child: Icon(Icons.location_pin, color: Colors.blue, size: 36),
+              child: Icon(Icons.location_pin, color: _skinColor(), size: 36),
             ),
           ),
         ];
@@ -176,12 +280,6 @@ class _MapScreenState extends State<MapScreen> {
       // エラー時は座標を返す
     }
     return '緯度: $lat, 経度: $lng';
-  }
-
-  @override
-  void dispose() {
-    _mapController.dispose();
-    super.dispose();
   }
 
   @override
@@ -245,10 +343,14 @@ class _MapScreenState extends State<MapScreen> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.miyazaki_transport_app',
               ),
+              // ルートポリライン
+              if (_polylines.isNotEmpty)
+                PolylineLayer(polylines: _polylines),
               MarkerLayer(
                 markers: [
                   ..._markers,
                   ...(_showBusStops ? _busStopMarkers : []),
+                  ..._coinMarkers,
                 ],
               ),
             ],

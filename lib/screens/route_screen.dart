@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../services/directions_service.dart';
 import '../models/bus_stop.dart';
 import '../services/bus_stop_service.dart';
+import '../services/coin_service.dart';
 import 'fare_calculator_screen.dart';
+import 'map_screen.dart';
 
 /// ルート検索画面
 /// 出発地・目的地にバス停名のサジェストを表示し、推定料金も表示する
@@ -29,6 +31,7 @@ class _RouteScreenState extends State<RouteScreen> {
   bool isLoading = false;
 
   final BusStopService _busStopService = BusStopService();
+  final CoinService _coinService = CoinService();
   List<BusStop> _allStops = [];
 
   // サジェスト表示用
@@ -299,6 +302,29 @@ class _RouteScreenState extends State<RouteScreen> {
                           icon: Icon(Icons.calculate),
                           label: Text('料金計算機で詳しく計算'),
                         ),
+                        SizedBox(height: 8),
+                        // マップで確認ボタン
+                        if (routeResult!['polyline'] != null)
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              final polyline =
+                                  routeResult!['polyline'] as String;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => MapScreen(
+                                    encodedPolyline: polyline,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.map),
+                            label: const Text('🗺️ マップで確認（コイン付き）'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
                       ] else ...[
                         Text(
                           'ルートが見つかりませんでした（${routeResult!['status']}）',
