@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/home_screen.dart';
+import 'services/coin_service.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   // .env ファイルを読み込む
   await dotenv.load(fileName: ".env");
+  // コインサービスを初期化（SharedPreferences）
+  await CoinService().initialize();
   runApp(MyApp());
 }
 
